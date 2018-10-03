@@ -6,12 +6,40 @@
 
 // dependencies
 const http = require('http');
+const https = require('https');
 const url = require('url');
 const StringDecoder = require('string_decoder').StringDecoder;
+const config = require('./config');
+const fs = require('fs');
 
-// the server should respond to all requests with a string
-const server = http.createServer((req, res) => {
-    
+// instantiating the http server
+const httpServer = http.createServer((req, res) => {
+    unifiedServer(req, res);
+});
+
+// start the server and listen on port specified in config file
+httpServer.listen(config.httpPort, () => {
+    console.log(`The server is listening on port ${config.httpPort} in ${config.envName} mode now`);
+});
+
+
+// instantiating the https server
+const httpsServerOptions = {
+    'key': fs.readFileSync('./https/key.pem'),
+    'cert': fs.readFileSync('./https/cert.pem')
+};
+const httpsServer = https.createServer(httpsServerOptions, (req, res) => {
+    unifiedServer(req, res);
+});
+
+// start the server and listen on port specified in config file
+httpsServer.listen(config.httpsPort, () => {
+    console.log(`The server is listening on port ${config.httpsPort} in ${config.envName} mode now`);
+});
+
+
+// all the server logic for both http and https servers
+var unifiedServer = (req, res) => {
     // get the url and parse it
     var parsedUrl = url.parse(req.url, true);
 
@@ -20,10 +48,10 @@ const server = http.createServer((req, res) => {
 
     // trims any trailing and leading '/'s
     var trimmedPath = path.replace(/^\/+|\/+$/g,'');
-    
+
     // get query string as an object
     var queryStringObject = parsedUrl.query;
-    
+
     // get http method
     var method = req.method.toLowerCase();
 
@@ -53,27 +81,36 @@ const server = http.createServer((req, res) => {
             'payload': buffer
         };
 
-        // send the response
-        res.end('Hello World!\n');
-        // log the request path
-        console.log(buffer);
+        // route the request to the handler specified in the router
+        chosenHandler(data, (statusCode, payload) => {
+
+            // use the status code called back by the handler or default to 200
+            statusCode = typeof(statusCode) == 'number' ? statusCode : 200;
+
+            // use the payload called back by the handler or default to an empty object
+            payload = typeof(payload) == 'object' ? payload : {};
+
+            // convert payload tp string
+            var payloadString = JSON.stringify(payload);
+
+            // return the response
+            res.setHeader('Content-Type', 'application/json');
+            res.writeHead(statusCode);
+            res.end(payloadString);
+            
+            // log the request path
+            console.log('Returning this response: ', statusCode, payloadString);
+        });
     });
-});
-
-// start the server and listen on port 3000
-server.listen(3000, () => {
-    console.log('The server is listening on port 3000 now');
-});
-
-// define the handlers
-var handlers = {
-
 };
 
-// sample handler
-handlers.sample = (data, callback) => {
+// define the handlers
+var handlers = {};
+
+// ping handler
+handlers.ping = (data, callback) => {
     // callback a http status code, and a payload object
-    callback(406, {'name': 'sample handler'});
+    callback(200);
 };
 
 // not found handler
@@ -83,5 +120,5 @@ handlers.notFound = (data, callback) => {
 
 // define a rquest router
 var router = {
-    'sample': handlers.sample
+    'ping': handlers.ping
 };
