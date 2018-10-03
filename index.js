@@ -113,12 +113,6 @@ handlers.ping = (data, callback) => {
     callback(200);
 };
 
-// hello handler
-handlers.hello = (data, callback) => {
-    // callback a http status code, and a payload object
-    callback(200, {'welcomeMessage': 'Hi there. Welcome to this API'});
-};
-
 // not found handler
 handlers.notFound = (data, callback) => {
     callback(404);
@@ -127,5 +121,4 @@ handlers.notFound = (data, callback) => {
 // define a rquest router
 var router = {
     'ping': handlers.ping,
-    'hello': handlers.hello
 };
