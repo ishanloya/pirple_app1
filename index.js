@@ -75,13 +75,7 @@ var unifiedServer = (req, res) => {
         var chosenHandler = typeof(router[trimmedPath]) !== 'undefined' ? router[trimmedPath] : handlers.notFound;
 
         // construct data object to send to handler
-        var data = {
-            'trimmedPath': trimmedPath,
-            'queryStringObject': queryStringObject,
-            'method': method,
-            'headers': headers,
-            'payload': helpers.parseJsonToObject(buffer)
-        };
+        var data = {trimmedPath, queryStringObject, method, headers, 'payload': helpers.parseJsonToObject(buffer)};
 
         // route the request to the handler specified in the router
         chosenHandler(data, (statusCode, payload) => {
@@ -110,5 +104,6 @@ var unifiedServer = (req, res) => {
 var router = {
     'ping': handlers.ping,
     'users': handlers.users,
-    'tokens': handlers.tokens
+    'tokens': handlers.tokens,
+    'checks': handlers.checks
 };
